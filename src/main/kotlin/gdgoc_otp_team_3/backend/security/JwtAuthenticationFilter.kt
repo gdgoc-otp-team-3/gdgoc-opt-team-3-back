@@ -9,50 +9,44 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.filter.OncePerRequestFilter
 
 @Component
 class JwtAuthenticationFilter(
-    private val authSupport: AuthSupport,
+  private val authSupport: AuthSupport,
 ) : OncePerRequestFilter() {
 
-    override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        if (request.method.equals("OPTIONS", ignoreCase = true)) {
-            return true
-        }
-        val path = request.requestURI
-        return path.startsWith("/api/v1/auth/login") ||
-            path.startsWith("/api/v1/auth/signup") ||
-            path.startsWith("/api/v1/auth/email-code")
-    }
+  override fun shouldNotFilter(request: HttpServletRequest): Boolean {
+    val path = request.requestURI
+    return path.startsWith("/api/v1/auth/")
+  }
 
-    override fun doFilterInternal(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        filterChain: FilterChain,
-    ) {
-        // Allow downstream services to use @Transactional with repository reads after this point
-        try {
-            val user = authSupport.resolveUser(request.getHeader("Authorization"))
-            val principal = CurrentUser(
-                id = user.id ?: -1,
-                email = user.email,
-                username = user.username,
-            )
-            val authentication = UsernamePasswordAuthenticationToken(
-                principal,
-                null,
-                emptyList(),
-            ).apply {
-                details = WebAuthenticationDetailsSource().buildDetails(request)
-            }
-            SecurityContextHolder.getContext().authentication = authentication
-        } catch (ex: Exception) {
-            response.status = HttpStatus.UNAUTHORIZED.value()
-            response.writer.write("Unauthorized: ${ex.message}")
-            return
-        }
-        filterChain.doFilter(request, response)
+  override fun doFilterInternal(
+    request: HttpServletRequest,
+    response: HttpServletResponse,
+    filterChain: FilterChain,
+  ) {
+    // Allow downstream services to use @Transactional with repository reads after this point
+    try {
+      val user = authSupport.resolveUser(request.getHeader("Authorization"))
+      val principal = CurrentUser(
+        id = user.id ?: -1,
+        email = user.email,
+        username = user.username,
+      )
+      val authentication = UsernamePasswordAuthenticationToken(
+        principal,
+        null,
+        emptyList(),
+      ).apply {
+        details = WebAuthenticationDetailsSource().buildDetails(request)
+      }
+      SecurityContextHolder.getContext().authentication = authentication
+    } catch (ex: Exception) {
+      response.status = HttpStatus.UNAUTHORIZED.value()
+      response.writer.write("Unauthorized: ${ex.message}")
+      return
     }
+    filterChain.doFilter(request, response)
+  }
 }
