@@ -1,29 +1,28 @@
 package gdgoc_otp_team_3.backend.service
 
-import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.cache.CacheManager
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Service
-import java.time.Duration
 import kotlin.random.Random
 
 @Service
 class EmailVerificationService(
-    private val redisTemplate: StringRedisTemplate,
+    private val cacheManager: CacheManager,
     private val mailSender: JavaMailSender,
 ) {
-    private val ttl: Duration = Duration.ofMinutes(5)
+    private val cacheName = "emailCodes"
 
     fun sendCode(email: String): String {
         val code = generateCode()
-        redisTemplate.opsForValue().set(key(email), code, ttl)
+        cache().put(email, code)
         sendEmail(email, code)
         return code
     }
 
     fun verifyCode(email: String, code: String): Boolean {
-        val stored = redisTemplate.opsForValue().get(key(email))
-        return stored != null && stored == code
+        val stored = cache().get(email, String::class.java) ?: return false
+        return stored == code
     }
 
     private fun sendEmail(email: String, code: String) {
@@ -35,7 +34,8 @@ class EmailVerificationService(
         mailSender.send(message)
     }
 
-    private fun key(email: String) = "verify:$email"
+    private fun cache() = cacheManager.getCache(cacheName)
+        ?: throw IllegalStateException("Cache '$cacheName' not configured")
 
     private fun generateCode(): String = (0..999999).random(Random).toString().padStart(6, '0')
 }
