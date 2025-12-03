@@ -13,18 +13,35 @@ spring:
     console:
       enabled: true
   mail:
-    host: ${MAIL_HOST:localhost}
-    port: ${MAIL_PORT:1025}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
+    host: smtp.gmail.com
+    port: 587
+    username: aplusbluenote@gmail.com
+    password: { MAIL_PASSWORD }
     properties:
       mail:
         smtp:
-          auth: ${MAIL_SMTP_AUTH:false}
+          auth: true
           starttls:
-            enable: ${MAIL_SMTP_STARTTLS:false}
+            enable: true
   cache:
     type: caffeine
     cache-names: emailCodes
     caffeine:
       spec: expireAfterWrite=5m,maximumSize=10000
+
+jwt:
+  expiration-hours: 12
+
+logging:
+  level:
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui
+    url: /v3/api-docs
