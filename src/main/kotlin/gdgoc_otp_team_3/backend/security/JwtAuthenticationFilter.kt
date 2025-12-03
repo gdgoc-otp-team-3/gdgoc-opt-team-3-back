@@ -18,7 +18,11 @@ class JwtAuthenticationFilter(
 
   override fun shouldNotFilter(request: HttpServletRequest): Boolean {
     val path = request.requestURI
-    return path.startsWith("/api/v1/auth/")
+    if (!path.startsWith("/api/v1/")) return true
+    val publicPrefixes = listOf(
+      "/api/v1/auth/",
+    )
+    return publicPrefixes.any { prefix -> path.startsWith(prefix) }
   }
 
   override fun doFilterInternal(

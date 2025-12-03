@@ -29,9 +29,10 @@ class SecurityConfig(
       .authorizeHttpRequests { auth ->
         auth
           .requestMatchers("/api/v1/auth/**").permitAll()
-          .anyRequest().authenticated()
+          .requestMatchers("/api/v1/**").authenticated()
+          .anyRequest().permitAll()
       }
-      .httpBasic(Customizer.withDefaults())
+      .httpBasic { it.disable() }
       .formLogin { it.disable() }
       .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
     return http.build()
