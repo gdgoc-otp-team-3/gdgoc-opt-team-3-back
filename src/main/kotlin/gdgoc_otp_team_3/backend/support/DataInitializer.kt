@@ -1,8 +1,11 @@
 package gdgoc_otp_team_3.backend.support
 
+import gdgoc_otp_team_3.backend.entity.InteractionEntity
 import gdgoc_otp_team_3.backend.entity.NoteEntity
 import gdgoc_otp_team_3.backend.entity.UserEntity
 import gdgoc_otp_team_3.backend.model.DifficultyLevel
+import gdgoc_otp_team_3.backend.model.InteractionType
+import gdgoc_otp_team_3.backend.repository.InteractionRepository
 import gdgoc_otp_team_3.backend.repository.NoteRepository
 import gdgoc_otp_team_3.backend.repository.UserRepository
 import jakarta.annotation.PostConstruct
@@ -13,6 +16,7 @@ import java.time.LocalDateTime
 class DataInitializer(
     private val userRepository: UserRepository,
     private val noteRepository: NoteRepository,
+    private val interactionRepository: InteractionRepository,
     private val passwordEncoder: org.springframework.security.crypto.password.PasswordEncoder,
 ) {
     @PostConstruct
@@ -56,8 +60,6 @@ class DataInitializer(
                 difficulty = DifficultyLevel.Medium,
                 estimatedTime = "25분",
                 createdAt = LocalDateTime.now().minusDays(2),
-                likes = 12,
-                dislikes = 1,
                 thumbnailUrl = "https://placehold.co/600x400?text=OS",
             ),
             NoteEntity(
@@ -74,8 +76,6 @@ class DataInitializer(
                 difficulty = DifficultyLevel.Hard,
                 estimatedTime = "40분",
                 createdAt = LocalDateTime.now().minusDays(4),
-                likes = 20,
-                dislikes = 0,
                 thumbnailUrl = "https://placehold.co/600x400?text=DS",
             ),
             NoteEntity(
@@ -92,12 +92,21 @@ class DataInitializer(
                 difficulty = DifficultyLevel.Easy,
                 estimatedTime = "15분",
                 createdAt = LocalDateTime.now().minusWeeks(1),
-                likes = 8,
-                dislikes = 0,
                 thumbnailUrl = "https://placehold.co/600x400?text=Capstone",
             ),
         )
 
         noteRepository.saveAll(notes)
+
+        val interactions = listOf(
+            InteractionEntity(user = alice, note = notes[0], type = InteractionType.LIKE),
+            InteractionEntity(user = bob, note = notes[0], type = InteractionType.LIKE),
+            InteractionEntity(user = carol, note = notes[0], type = InteractionType.DISLIKE),
+            InteractionEntity(user = alice, note = notes[1], type = InteractionType.LIKE),
+            InteractionEntity(user = bob, note = notes[1], type = InteractionType.LIKE),
+            InteractionEntity(user = carol, note = notes[1], type = InteractionType.LIKE),
+            InteractionEntity(user = alice, note = notes[2], type = InteractionType.LIKE),
+        )
+        interactionRepository.saveAll(interactions)
     }
 }

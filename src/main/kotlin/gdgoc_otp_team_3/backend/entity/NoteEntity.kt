@@ -6,12 +6,11 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(
-    name = "notes",
-    indexes = [
-        Index(name = "idx_notes_likes", columnList = "likes"),
-        Index(name = "idx_notes_created_at", columnList = "createdAt"),
-        Index(name = "idx_notes_major", columnList = "major"),
-    ],
+  name = "notes",
+  indexes = [
+    Index(name = "idx_notes_created_at", columnList = "createdAt"),
+    Index(name = "idx_notes_major", columnList = "major"),
+  ],
 )
 class NoteEntity(
   @Id
@@ -54,18 +53,12 @@ class NoteEntity(
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  var difficulty: DifficultyLevel = DifficultyLevel.Medium,
+  var difficulty: DifficultyLevel? = null,
 
   var estimatedTime: String? = null,
 
   @Column(nullable = false)
   var createdAt: LocalDateTime = LocalDateTime.now(),
-
-  @Column(nullable = false)
-  var likes: Int = 0,
-
-  @Column(nullable = false)
-  var dislikes: Int = 0,
 
   var thumbnailUrl: String? = null,
 

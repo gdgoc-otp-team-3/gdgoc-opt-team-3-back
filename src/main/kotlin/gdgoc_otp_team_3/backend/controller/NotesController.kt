@@ -34,7 +34,8 @@ class NotesController(
 
   @PostMapping("/{noteId}/interaction")
   fun interact(
+    @User user: CurrentUser,
     @PathVariable noteId: Long,
     @RequestBody request: InteractionRequest,
-  ) = noteService.interact(noteId, request)
+  ) = noteService.interact(noteId, request, user)
 }
