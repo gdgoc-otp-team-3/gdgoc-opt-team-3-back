@@ -3,6 +3,7 @@ package gdgoc_otp_team_3.backend.service
 import gdgoc_otp_team_3.backend.dto.*
 import gdgoc_otp_team_3.backend.entity.InteractionEntity
 import gdgoc_otp_team_3.backend.entity.NoteEntity
+import gdgoc_otp_team_3.backend.config.AwsProperties
 import gdgoc_otp_team_3.backend.repository.InteractionRepository
 import gdgoc_otp_team_3.backend.repository.NoteRepository
 import gdgoc_otp_team_3.backend.repository.UserRepository
@@ -12,6 +13,12 @@ import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
+import software.amazon.awssdk.services.s3.presigner.S3Presigner
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest
+import java.time.Duration
 import java.util.*
 
 @Service
@@ -20,6 +27,8 @@ class NoteService(
   private val interactionRepository: InteractionRepository,
   private val userService: UserService,
   private val userRepository: UserRepository,
+  private val s3Presigner: S3Presigner,
+  private val awsProperties: AwsProperties,
 ) {
   @Transactional
   fun upload(user: CurrentUser, request: NoteUploadRequest): NoteUploadResponse {
@@ -42,7 +51,7 @@ class NoteService(
       thumbnailUrl = null,
     )
     val saved = noteRepository.save(initial)
-    val presignedUrl = "presignedUrl" // TODO
+    val presignedUrl = generateUploadUrl(fileKey, request.fileType)
     return NoteUploadResponse(noteId = saved.id ?: -1, presignedUrl = presignedUrl)
   }
 
@@ -78,7 +87,7 @@ class NoteService(
   fun getDetail(noteId: Long): NoteDetailResponse {
     val note = noteRepository.findById(noteId)
       .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "노트를 찾을 수 없습니다.") }
-    val presignedUrl = "presignedUrl" // TODO
+    val presignedUrl = generateDownloadUrl(note.fileKey)
     val interactionCount = countsByNoteIds(listOf(noteId))[noteId] ?: InteractionCount(0, 0)
     return NoteDetailResponse(
       id = note.id ?: -1,
@@ -139,6 +148,31 @@ class NoteService(
     if (noteIds.isEmpty()) return emptyMap()
     return interactionRepository.aggregateCountsByNoteIds(noteIds)
       .associate { it.getNoteId() to InteractionCount(it.getLikes().toInt(), it.getDislikes().toInt()) }
+  }
+
+  private fun generateUploadUrl(fileKey: String, contentType: String): String {
+    val putObjectRequest = PutObjectRequest.builder()
+      .bucket(awsProperties.bucket)
+      .key(fileKey)
+      .contentType(contentType)
+      .build()
+    val presignRequest = PutObjectPresignRequest.builder()
+      .signatureDuration(Duration.ofSeconds(awsProperties.presignExpirationSeconds))
+      .putObjectRequest(putObjectRequest)
+      .build()
+    return s3Presigner.presignPutObject(presignRequest).url().toExternalForm()
+  }
+
+  private fun generateDownloadUrl(fileKey: String): String {
+    val getObjectRequest = GetObjectRequest.builder()
+      .bucket(awsProperties.bucket)
+      .key(fileKey)
+      .build()
+    val presignRequest = GetObjectPresignRequest.builder()
+      .signatureDuration(Duration.ofSeconds(awsProperties.presignExpirationSeconds))
+      .getObjectRequest(getObjectRequest)
+      .build()
+    return s3Presigner.presignGetObject(presignRequest).url().toExternalForm()
   }
 
   private fun toSummary(note: NoteEntity, likes: Int = 0): NoteSummaryResponse = NoteSummaryResponse(

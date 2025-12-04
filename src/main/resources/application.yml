@@ -45,3 +45,9 @@ springdoc:
   swagger-ui:
     path: /swagger-ui
     url: /v3/api-docs
+
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket: ${AWS_S3_BUCKET:your-bucket-name}
+    presign-expiration-seconds: ${AWS_S3_PRESIGN_EXPIRATION_SECONDS:600}

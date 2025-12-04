@@ -29,6 +29,8 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-mail")
   implementation("io.jsonwebtoken:jjwt-api:0.11.5")
   implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.5")
+  implementation(platform("software.amazon.awssdk:bom:2.30.25"))
+  implementation("software.amazon.awssdk:s3")
   implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
   implementation("org.jetbrains.kotlin:kotlin-reflect")
   implementation("com.h2database:h2")
